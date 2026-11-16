@@ -48,6 +48,13 @@ int soryu_ksym_init(void)
     return 0;
 }
 
+static __nocfi unsigned long ksym_call(const char *name)
+{
+    if (!kln)
+        return 0;
+    return kln(name);
+}
+
 unsigned long soryu_ksym_raw(const char *name)
 {
     char buf[KSYM_NAME_LEN];
@@ -56,9 +63,9 @@ unsigned long soryu_ksym_raw(const char *name)
     if (!kln)
         return 0;
     if (snprintf(buf, sizeof(buf), "%s.cfi_jt", name) < sizeof(buf)) {
-        a = kln(buf);
+        a = ksym_call(buf);
         if (a)
             return a;
     }
-    return kln(name);
+    return ksym_call(name);
 }
