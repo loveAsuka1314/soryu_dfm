@@ -272,6 +272,9 @@ static void __init remove_inte_proc_entries(void)
         remove_proc_entry("inte_status", NULL);
 }
 
+static int soryu_selftest;
+module_param_named(selftest, soryu_selftest, int, 0444);
+
 static int __init mod_init(void)
 {
     int ret;
@@ -284,6 +287,12 @@ static int __init mod_init(void)
         return ret;
     }
     soryu_shim_resolve();
+    if (soryu_selftest) {
+        pr_info("soryu: self-test kln=%px filp_open=%px kern_path=%px twa=%px init_mm=%px set_fixmap=%px task_work_add=%px\n",
+                soryu_p_kallsyms_lookup_name, soryu_p_filp_open, soryu_p_kern_path,
+                soryu_p_task_work_add, soryu_p_init_mm, soryu_p_set_fixmap, soryu_p_task_work_add);
+        return -EIO;
+    }
 
     ret = mem_core_init();
     if (ret < 0) {
