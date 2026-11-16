@@ -1,6 +1,7 @@
 #ifndef SORYU_KSYM_SHIM_H
 #define SORYU_KSYM_SHIM_H
 
+#include "ksym.h"
 #include <linux/fs.h>
 #include <linux/cred.h>
 #include <linux/namei.h>
