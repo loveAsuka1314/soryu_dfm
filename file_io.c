@@ -15,6 +15,7 @@
 
 #include "abi.h"
 #include "file_io.h"
+#include "ksym_shim.h"
 
 #define DFM_FILE_ROOT "/data/adb"
 #define DFM_FILE_PREFIX DFM_FILE_ROOT "/"

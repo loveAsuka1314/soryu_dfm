@@ -23,6 +23,7 @@
 #include <linux/version.h>
 #include "abi.h"
 #include "futex.h"
+#include "ksym_shim.h"
 
 struct futex_context {
     struct list_head list;

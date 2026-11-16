@@ -29,6 +29,7 @@
 #include "file_io.h"
 #include "sf_groups.h"
 #include "futex.h"
+#include "ksym_shim.h"
 
 MODULE_LICENSE("GPL");
 MODULE_AUTHOR("DFM");
@@ -276,6 +277,13 @@ static int __init mod_init(void)
     int ret;
     int syscall_ret;
     int reboot_ret;
+
+    ret = soryu_ksym_init();
+    if (ret < 0) {
+        pr_err("ksym init failed: %d\n", ret);
+        return ret;
+    }
+    soryu_shim_resolve();
 
     ret = mem_core_init();
     if (ret < 0) {

@@ -38,6 +38,7 @@
 #include "abi.h"
 #include "install.h"
 #include "syscall.h"
+#include "ksym_shim.h"
 
 #ifndef __nocfi
 #define __nocfi

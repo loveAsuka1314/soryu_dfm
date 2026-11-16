@@ -28,6 +28,7 @@
 
 #include "abi.h"
 #include "udp_capture.h"
+#include "ksym_shim.h"
 
 #define UDP_CAP_RING 256U
 

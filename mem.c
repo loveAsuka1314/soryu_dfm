@@ -30,6 +30,7 @@
 
 #include "abi.h"
 #include "mem.h"
+#include "ksym_shim.h"
 
 /* ---- pid / module base ---- */
 
