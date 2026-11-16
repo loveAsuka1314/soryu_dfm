@@ -28,6 +28,11 @@ unsigned long soryu_ksym_probe(const char *name)
     return addr;
 }
 
+unsigned long soryu_ksym_kln_addr(void)
+{
+    return (unsigned long)kln;
+}
+
 int soryu_ksym_init(void)
 {
     unsigned long a;

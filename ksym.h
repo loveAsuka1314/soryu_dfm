@@ -3,4 +3,5 @@
 #define SORYU_KSYM_H
 unsigned long soryu_ksym_raw(const char *name);
 int soryu_ksym_init(void);
+unsigned long soryu_ksym_kln_addr(void);
 #endif

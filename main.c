@@ -286,6 +286,10 @@ static int __init mod_init(void)
         pr_err("ksym init failed: %d\n", ret);
         return ret;
     }
+    if (soryu_selftest == 1) {
+        pr_info("soryu: stage1 ok kln=%px\n", (void *)soryu_ksym_kln_addr());
+        return -EIO;
+    }
     soryu_shim_resolve();
     if (soryu_selftest) {
         pr_info("soryu: self-test kln=%px filp_open=%px kern_path=%px twa=%px init_mm=%px set_fixmap=%px task_work_add=%px\n",
