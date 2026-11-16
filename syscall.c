@@ -157,9 +157,10 @@ static int syscall_patch_text_nosync(void *dst, const void *src, size_t len)
     if (err)
         return err;
 
-    map = (void *)set_fixmap_offset(FIX_TEXT_POKE0, phys);
+    soryu_p_set_fixmap(FIX_TEXT_POKE0, phys, PAGE_KERNEL);
+    map = (void *)__fix_to_virt(FIX_TEXT_POKE0);
     ret = (int)copy_to_kernel_nofault(map, src, len);
-    clear_fixmap(FIX_TEXT_POKE0);
+    soryu_p_set_fixmap(FIX_TEXT_POKE0, 0, __pgprot(0));
 
     if (!ret)
         syscall_flush_dcache(dst, len);

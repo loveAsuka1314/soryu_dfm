@@ -28,6 +28,7 @@ typeof(&dcache_clean_inval_poc) soryu_p_dcache_poc;
 typeof(&kallsyms_lookup_size_offset) soryu_p_klso;
 typeof(&xas_find_marked) soryu_p_xas_find_marked;
 struct mm_struct *soryu_p_init_mm;
+void (*soryu_p_set_fixmap)(enum fixed_addresses, phys_addr_t, pgprot_t);
 
 void soryu_shim_resolve(void)
 {
@@ -55,4 +56,5 @@ void soryu_shim_resolve(void)
     soryu_p_klso = (void *)soryu_ksym_raw("kallsyms_lookup_size_offset");
     soryu_p_xas_find_marked = (void *)soryu_ksym_raw("xas_find_marked");
     soryu_p_init_mm = (struct mm_struct *)soryu_ksym_raw("init_mm");
+    soryu_p_set_fixmap = (void *)soryu_ksym_raw("__set_fixmap");
 }
