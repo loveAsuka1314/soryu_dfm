@@ -1,5 +1,5 @@
-#ifndef ENKERNEL_LOG_H
-#define ENKERNEL_LOG_H
+#ifndef SORYU_LOG_H
+#define SORYU_LOG_H
 
 #include <android/log.h>
 #include <cstdarg>

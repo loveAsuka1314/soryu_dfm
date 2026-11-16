@@ -7,8 +7,8 @@
  *   cmake --install cmake-build-debug --prefix out/soryu
  *
  * Integrate the source SDK in another NDK CMake project:
- *   set(ENKERNEL_BUILD_TOOLS OFF CACHE BOOL "" FORCE)
- *   set(ENKERNEL_BUILD_EXAMPLE OFF CACHE BOOL "" FORCE)
+ *   set(SORYU_BUILD_TOOLS OFF CACHE BOOL "" FORCE)
+ *   set(SORYU_BUILD_EXAMPLE OFF CACHE BOOL "" FORCE)
  *   add_subdirectory(/path/to/soryu/sdk soryu-sdk)
  *   target_link_libraries(your_target PRIVATE soryu::sdk)
  * Or use find_package(soryu CONFIG REQUIRED) with soryu_DIR set to

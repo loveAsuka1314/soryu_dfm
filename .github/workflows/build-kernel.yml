@@ -101,7 +101,7 @@ jobs:
             -DCMAKE_TOOLCHAIN_FILE="$ANDROID_NDK_LATEST_HOME/build/cmake/android.toolchain.cmake" \
             -DANDROID_ABI=arm64-v8a -DANDROID_PLATFORM=android-26 \
             -DANDROID_STL=c++_static -DCMAKE_BUILD_TYPE=Release \
-            -Denkernel_DIR="$PWD/out/soryu-sdk-arm64-v8a/lib/cmake/enkernel"
+            -Dsoryu_DIR="$PWD/out/soryu-sdk-arm64-v8a/lib/cmake/soryu"
           cmake --build build/consumer --parallel "$(nproc)"
 
       - name: Upload SDK, loader and calling example
@@ -140,7 +140,7 @@ jobs:
             (cd out/soryu-arm64-v8a/modules && sha256sum --check "soryu-$kmi.ko.sha256")
           done
           # Artifact ZIPs do not preserve executable permissions; the tarball does.
-          chmod 755 out/soryu-arm64-v8a/bin/dfm_loader out/soryu-arm64-v8a/bin/dfm_example
+          chmod 755 out/soryu-arm64-v8a/bin/soryu_loader out/soryu-arm64-v8a/bin/soryu_example
           tar -C out/soryu-arm64-v8a --exclude=./modules \
             -czf out/soryu-sdk-arm64-v8a.tar.gz .
           tar -C out -czf out/soryu-arm64-v8a.tar.gz soryu-arm64-v8a
