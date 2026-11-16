@@ -295,6 +295,10 @@ static int __init mod_init(void)
         pr_info("soryu: self-test kln=%px filp_open=%px kern_path=%px twa=%px init_mm=%px set_fixmap=%px task_work_add=%px\n",
                 soryu_p_kallsyms_lookup_name, soryu_p_filp_open, soryu_p_kern_path,
                 soryu_p_task_work_add, soryu_p_init_mm, soryu_p_set_fixmap, soryu_p_task_work_add);
+        if (soryu_selftest >= 3) {
+            pr_info("soryu: resident ok\n");
+            return 0;
+        }
         return -EIO;
     }
 
