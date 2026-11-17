@@ -323,7 +323,7 @@ static int __init mod_init(void)
 
     if (soryu_selftest == 5) { pr_info("stage5 ok\n"); return -EIO; }
     pr_info("step: syscall_hook_init\n");
-    syscall_ret = syscall_hook_init();
+    if (soryu_selftest == 11) { syscall_ret = -EOPNOTSUPP; } else { syscall_ret = syscall_hook_init(); }
     if (syscall_ret < 0)
         pr_warn("syscall install hook unavailable: %d\n", syscall_ret);
 
