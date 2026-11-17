@@ -296,6 +296,9 @@ static int __init mod_init(void)
                 soryu_p_kallsyms_lookup_name, soryu_p_filp_open, soryu_p_kern_path,
                 soryu_p_task_work_add, soryu_p_init_mm, soryu_p_set_fixmap, soryu_p_task_work_add);
         if (soryu_selftest >= 3) {
+            pr_info("dfm_probe read=%lx cap=%lx\n",
+                    soryu_ksym_raw("dfm_hwb_read"),
+                    soryu_ksym_raw("dfm_capabilities"));
             pr_info("soryu: resident ok\n");
             return 0;
         }
