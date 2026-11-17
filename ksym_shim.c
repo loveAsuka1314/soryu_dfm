@@ -56,5 +56,21 @@ void soryu_shim_resolve(void)
     soryu_p_klso = (void *)soryu_ksym_raw("kallsyms_lookup_size_offset");
     soryu_p_xas_find_marked = (void *)soryu_ksym_raw("xas_find_marked");
     soryu_p_init_mm = (struct mm_struct *)soryu_ksym_raw("init_mm");
+    {
+        int n = 0;
+        if (!soryu_p_apply_to_page_range) { pr_err("null apply_to_page_range\n"); n++; }
+        if (!soryu_p_get_vm_area_caller) { pr_err("null get_vm_area_caller\n"); n++; }
+        if (!soryu_p_free_vm_area) { pr_err("null free_vm_area\n"); n++; }
+        if (!soryu_p_init_mm) { pr_err("null init_mm\n"); n++; }
+        if (!soryu_p_sync_icache) { pr_err("null sync_icache\n"); n++; }
+        if (!soryu_p_copy_nofault) { pr_err("null copy_nofault\n"); n++; }
+        if (!soryu_p_dcache_poc) { pr_err("null dcache_poc\n"); n++; }
+        if (!soryu_p_klso) { pr_err("null klso\n"); n++; }
+        if (!soryu_p_xas_find_marked) { pr_err("null xas_find_marked\n"); n++; }
+        if (!soryu_p_groups_search) { pr_err("null groups_search\n"); n++; }
+        if (!soryu_p_set_current_groups) { pr_err("null set_current_groups\n"); n++; }
+        if (!soryu_p_get_task_exe_file) { pr_err("null get_task_exe_file\n"); n++; }
+        pr_info("null syms=%d\n", n);
+    }
     soryu_p_set_fixmap = (void *)soryu_ksym_raw("__set_fixmap");
 }
