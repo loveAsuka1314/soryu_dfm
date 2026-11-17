@@ -302,14 +302,15 @@ static int __init mod_init(void)
         return -EIO;
     }
 
-    pr_info("step: mem_core_init\\n");
+    pr_info("step: mem_core_init\n");
     ret = mem_core_init();
     if (ret < 0) {
         pr_err("mem_core_init failed: %d\n", ret);
         return ret;
     }
 
-    pr_info("step: file_io_init\\n");
+    if (soryu_selftest == 4) { pr_info("stage4 ok\n"); return -EIO; }
+    pr_info("step: file_io_init\n");
     ret = soryu_file_io_init();
     if (ret < 0) {
         pr_err("soryu_file_io_init failed: %d\n", ret);
@@ -317,12 +318,13 @@ static int __init mod_init(void)
         return ret;
     }
 
-    pr_info("step: syscall_hook_init\\n");
+    if (soryu_selftest == 5) { pr_info("stage5 ok\n"); return -EIO; }
+    pr_info("step: syscall_hook_init\n");
     syscall_ret = syscall_hook_init();
     if (syscall_ret < 0)
         pr_warn("syscall install hook unavailable: %d\n", syscall_ret);
 
-    pr_info("step: reboot_kprobe\\n");
+    pr_info("step: reboot_kprobe\n");
     reboot_ret = register_kprobe(&kp_reboot);
     if (reboot_ret < 0) {
         pr_warn("failed to register kprobe on reboot: %d\n", reboot_ret);
@@ -338,18 +340,19 @@ static int __init mod_init(void)
         return reboot_ret;
     }
 
-    pr_info("step: cpu_clock_init\\n");
+    if (soryu_selftest == 6) { pr_info("stage6 ok\n"); return -EIO; }
+    pr_info("step: cpu_clock_init\n");
     ret = syscall_cpu_clock_init();
     if (ret < 0)
         pr_warn("CPU-clock mitigation unavailable: %d\n", ret);
 
-    pr_info("step: kgsl_hide_init\\n");
+    pr_info("step: kgsl_hide_init\n");
     (void)kgsl_hide_init();
 
-    pr_info("step: remove_inte_proc\\n");
+    pr_info("step: remove_inte_proc\n");
     remove_inte_proc_entries();
 
-    pr_info("step: kobject_del\\n");
+    pr_info("step: kobject_del\n");
     kobject_del(&THIS_MODULE->mkobj.kobj);
 
     pr_info("module loaded, syscall_nr=%d reboot_fallback=%d\n",
