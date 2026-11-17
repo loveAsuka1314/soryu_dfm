@@ -344,17 +344,21 @@ static int __init mod_init(void)
     }
 
     if (soryu_selftest == 6) { pr_info("stage6 ok\n"); return -EIO; }
+    if (soryu_selftest == 7) { pr_info("stage7 ok\n"); return -EIO; }
     pr_info("step: cpu_clock_init\n");
     ret = syscall_cpu_clock_init();
     if (ret < 0)
         pr_warn("CPU-clock mitigation unavailable: %d\n", ret);
 
+    if (soryu_selftest == 8) { pr_info("stage8 ok\n"); return -EIO; }
     pr_info("step: kgsl_hide_init\n");
     (void)kgsl_hide_init();
 
+    if (soryu_selftest == 9) { pr_info("stage9 ok\n"); return -EIO; }
     pr_info("step: remove_inte_proc\n");
     remove_inte_proc_entries();
 
+    if (soryu_selftest == 10) { pr_info("stage10 ok\n"); return -EIO; }
     pr_info("step: kobject_del\n");
     kobject_del(&THIS_MODULE->mkobj.kobj);
 
