@@ -88,123 +88,77 @@ static void *syscall_lookup_symbol(const char *symbol_name)
 #define syscall_flush_dcache(start, sz) __flush_dcache_area((void *)(start), (sz))
 #endif
 
-struct syscall_patch_text_info {
-    void *dst;
-    const void *src;
-    const void *expected;
-    size_t len;
-    atomic_t cpu_count;
-};
+/*
+ * ---------------- 文本补丁（2026-11-18 重写，替换 fixmap 版） ----------------
+ *
+ * 旧实现：
+ *     phys = syscall_phys_from_virt(dst);
+ *     soryu_p_set_fixmap(FIX_TEXT_POKE0, phys, PAGE_KERNEL);
+ *     map  = (void *)__fix_to_virt(FIX_TEXT_POKE0);
+ *     copy_to_kernel_nofault(map, src, len);
+ *     soryu_p_set_fixmap(FIX_TEXT_POKE0, 0, __pgprot(0));
+ *
+ * FIX_TEXT_POKE0 是 enum fixed_addresses 的编译期成员，__fix_to_virt() 也是
+ * 编译期常量表达式，二者都随 CONFIG 走：页大小(4K/16K)、VA_BITS、KASAN、
+ * HOTPLUG_CPU、ACPI、VT、FTRACE... 任意一项不同，槽号和基址就不同。
+ * 模块用 5.15.202 的自建树编译、加载到 5.15.194-android13-8 真机上时：
+ * __set_fixmap() 把 PAGE_KERNEL 的物理页装进了**另一个** fixmap 槽，
+ * 随后 8 字节被写进那块毫不相关的映射。而整段代码运行在
+ * stop_machine() 停掉其余全部 CPU 的临界区里，没有任何 CPU 还能跑到
+ * panic/printk，于是看门狗直接硬复位 —— 既无 panic 记录也无日志。
+ *
+ * 新实现完全不碰 fixmap：调用内核自己的 arm64 文本补丁 API
+ *     aarch64_insn_patch_text(void *addrs[], u32 insns[], int cnt)
+ * 它内部使用本内核正确的 fixmap 槽/页表代码，自带 D-cache/I-cache 同步，
+ * 并且自己用 stop_machine 停住其它 CPU；我们只把指针按 4 字节字拆开。
+ * 目标内核没有该符号时退回 nosync 版；两者都缺则返回 -EOPNOTSUPP，
+ * 让 syscall hook 优雅跳过 —— 绝不再带着错误常量去写内存。
+ */
 
-static unsigned long syscall_phys_from_virt(unsigned long addr, int *err)
-{
-    struct mm_struct *mm = &init_mm;
-    pgd_t *pgd;
-    p4d_t *p4d;
-    pud_t *pud;
-    pmd_t *pmd;
-    pte_t *pte;
-
-    *err = 0;
-
-    pgd = pgd_offset(mm, addr);
-    if (pgd_none(*pgd) || pgd_bad(*pgd))
-        goto fail;
-
-    p4d = p4d_offset(pgd, addr);
-    if (p4d_none(*p4d) || p4d_bad(*p4d))
-        goto fail;
-#if defined(p4d_leaf)
-    if (p4d_leaf(*p4d))
-        return __p4d_to_phys(*p4d) + (addr & ~P4D_MASK);
-#endif
-
-    pud = pud_offset(p4d, addr);
-    if (pud_none(*pud) || pud_bad(*pud))
-        goto fail;
-#if defined(pud_leaf)
-    if (pud_leaf(*pud))
-        return __pud_to_phys(*pud) + (addr & ~PUD_MASK);
-#endif
-
-    pmd = pmd_offset(pud, addr);
-#if defined(pmd_leaf)
-    if (pmd_leaf(*pmd))
-        return __pmd_to_phys(*pmd) + (addr & ~PMD_MASK);
-#endif
-    if (pmd_none(*pmd) || pmd_bad(*pmd))
-        goto fail;
-
-    pte = pte_offset_kernel(pmd, addr);
-    if (!pte || !pte_present(*pte))
-        goto fail;
-
-    return __pte_to_phys(*pte) + (addr & ~PAGE_MASK);
-
-fail:
-    *err = -ENOENT;
-    return 0;
-}
-
-static int syscall_patch_text_nosync(void *dst, const void *src, size_t len)
-{
-    unsigned long phys;
-    void *map;
-    int err;
-    int ret;
-
-    phys = syscall_phys_from_virt((unsigned long)dst, &err);
-    if (err)
-        return err;
-
-    soryu_p_set_fixmap(FIX_TEXT_POKE0, phys, PAGE_KERNEL);
-    map = (void *)__fix_to_virt(FIX_TEXT_POKE0);
-    ret = (int)copy_to_kernel_nofault(map, src, len);
-    soryu_p_set_fixmap(FIX_TEXT_POKE0, 0, __pgprot(0));
-
-    if (!ret)
-        syscall_flush_dcache(dst, len);
-
-    return ret;
-}
-
-static int syscall_patch_text_cb(void *arg)
-{
-    struct syscall_patch_text_info *info = arg;
-    int ret = 0;
-
-    if (atomic_inc_return(&info->cpu_count) == num_online_cpus()) {
-        if (info->expected && memcmp(info->dst, info->expected, info->len))
-            ret = -EBUSY;
-        else
-            ret = syscall_patch_text_nosync(info->dst, info->src, info->len);
-        atomic_inc(&info->cpu_count);
-    } else {
-        while (atomic_read(&info->cpu_count) <= num_online_cpus())
-            cpu_relax();
-        isb();
-    }
-
-    return ret;
-}
-
-static int syscall_patch_text_expected(void *dst, const void *src,
-                                       const void *expected, size_t len)
-{
-    struct syscall_patch_text_info info = {
-        .dst = dst,
-        .src = src,
-        .expected = expected,
-        .len = len,
-        .cpu_count = ATOMIC_INIT(0),
-    };
-
-    return stop_machine(syscall_patch_text_cb, &info, cpu_online_mask);
-}
+#define SORYU_PATCH_MAX_WORDS 4
 
 static int syscall_patch_text(void *dst, const void *src, size_t len)
 {
-    return syscall_patch_text_expected(dst, src, NULL, len);
+    u32 words[SORYU_PATCH_MAX_WORDS];
+    void *addrs[SORYU_PATCH_MAX_WORDS];
+    int cnt;
+    int i;
+
+    if (!dst || !src || len == 0)
+        return -EINVAL;
+    if (len > sizeof(words) || (len & 3) || ((unsigned long)dst & 3))
+        return -EINVAL;
+
+    cnt = (int)(len / 4);
+    memcpy(words, src, len);
+    for (i = 0; i < cnt; i++)
+        addrs[i] = (char *)dst + i * 4;
+
+    if (soryu_p_insn_patch_text)
+        return soryu_p_insn_patch_text(addrs, words, cnt);
+
+    if (soryu_p_insn_patch_nosync) {
+        int ret;
+
+        for (i = 0; i < cnt; i++) {
+            ret = soryu_p_insn_patch_nosync(addrs[i], words[i]);
+            if (ret)
+                return ret;
+        }
+        return 0;
+    }
+
+    return -EOPNOTSUPP;
+}
+
+/* 兼容原调用点的 compare-and-swap 语义：不相等则不写，返回 -EBUSY。 */
+static int syscall_patch_text_expected(void *dst, const void *src,
+                                       const void *expected, size_t len)
+{
+    if (expected && memcmp(dst, expected, len))
+        return -EBUSY;
+
+    return syscall_patch_text(dst, src, len);
 }
 
 static int syscall_patch_table(int nr, syscall_fn_t fn)

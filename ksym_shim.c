@@ -28,7 +28,8 @@ typeof(&dcache_clean_inval_poc) soryu_p_dcache_poc;
 typeof(&kallsyms_lookup_size_offset) soryu_p_klso;
 typeof(&xas_find_marked) soryu_p_xas_find_marked;
 struct mm_struct *soryu_p_init_mm;
-void (*soryu_p_set_fixmap)(enum fixed_addresses, phys_addr_t, pgprot_t);
+int (*soryu_p_insn_patch_text)(void *addrs[], u32 insns[], int cnt);
+int (*soryu_p_insn_patch_nosync)(void *addr, u32 insn);
 
 void soryu_shim_resolve(void)
 {
@@ -72,5 +73,8 @@ void soryu_shim_resolve(void)
         if (!soryu_p_get_task_exe_file) { pr_err("null get_task_exe_file\n"); n++; }
         pr_info("null syms=%d\n", n);
     }
-    soryu_p_set_fixmap = (void *)soryu_ksym_raw("__set_fixmap");
+    soryu_p_insn_patch_text = (void *)soryu_ksym_raw("aarch64_insn_patch_text");
+    soryu_p_insn_patch_nosync = (void *)soryu_ksym_raw("aarch64_insn_patch_text_nosync");
+    if (!soryu_p_insn_patch_text && !soryu_p_insn_patch_nosync)
+        pr_warn("arm64 text patch api missing; syscall hook will be skipped\n");
 }

@@ -43,7 +43,8 @@ extern typeof(&dcache_clean_inval_poc) soryu_p_dcache_poc;
 extern typeof(&kallsyms_lookup_size_offset) soryu_p_klso;
 extern typeof(&xas_find_marked) soryu_p_xas_find_marked;
 extern struct mm_struct *soryu_p_init_mm;
-extern void (*soryu_p_set_fixmap)(enum fixed_addresses idx, phys_addr_t phys, pgprot_t prot);
+extern int (*soryu_p_insn_patch_text)(void *addrs[], u32 insns[], int cnt);
+extern int (*soryu_p_insn_patch_nosync)(void *addr, u32 insn);
 #endif
 
 #ifndef SORYU_KSYM_NO_MACRO
