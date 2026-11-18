@@ -23,7 +23,7 @@ jobs:
         kmi:
           - android13-5.15
     container:
-      image: ghcr.io/ylarod/ddk:${{ matrix.kmi }}-20260313
+      image: ghcr.io/ylarod/ddk:${{ matrix.kmi }}-20250825
       options: --privileged
     defaults:
       run:
@@ -37,6 +37,13 @@ jobs:
         with:
           persist-credentials: false
 
+      - name: Show DDK kernel config
+        run: |
+          C=/opt/ddk/src/android13-5.15
+          echo "--- version ---"
+          head -4 $C/Makefile 2>/dev/null || true
+          echo "--- key configs ---"
+          grep -E "^CONFIG_(NR_CPUS|ARM64_VA_BITS|SMP|MODVERSIONS|CFI_CLANG)=" $C/.config 2>/dev/null || echo "no .config"
       - name: Build kernel module
         run: |
           set -euo pipefail
