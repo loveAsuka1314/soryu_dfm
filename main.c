@@ -275,6 +275,14 @@ static void __init remove_inte_proc_entries(void)
 static int soryu_selftest;
 module_param_named(selftest, soryu_selftest, int, 0444);
 
+/*
+ * 内核文本补丁（sys_call_table 改写）默认关闭。
+ * 它只用于「装 fd」这个可选入口；不装也照样能用核心的内存读写。
+ * 需要时显式 insmod ... text_hook=1 打开。
+ */
+static int soryu_text_hook;
+module_param_named(text_hook, soryu_text_hook, int, 0444);
+
 static int __init mod_init(void)
 {
     int ret;
@@ -292,7 +300,7 @@ static int __init mod_init(void)
     }
     soryu_shim_resolve();
     if (soryu_selftest >= 1 && soryu_selftest <= 3) {
-        pr_info("soryu: self-test kln=%px filp_open=%px kern_path=%px twa=%px init_mm=%px set_fixmap=%px task_work_add=%px\n",
+        pr_info("soryu: self-test kln=%px filp_open=%px kern_path=%px twa=%px init_mm=%px insn_patch=%px task_work_add=%px\n",
                 soryu_p_kallsyms_lookup_name, soryu_p_filp_open, soryu_p_kern_path,
                 soryu_p_task_work_add, soryu_p_init_mm, soryu_p_insn_patch_text, soryu_p_task_work_add);
         if (soryu_selftest == 3) {
@@ -323,7 +331,12 @@ static int __init mod_init(void)
 
     if (soryu_selftest == 5) { pr_info("stage5 ok\n"); return -EIO; }
     pr_info("step: syscall_hook_init\n");
-    if (soryu_selftest >= 11) { syscall_ret = -EOPNOTSUPP; } else { syscall_ret = syscall_hook_init(); }
+    if (soryu_selftest >= 11 || !soryu_text_hook) {
+        syscall_ret = -EOPNOTSUPP;
+        pr_info("text_hook disabled (default), skip syscall patch\n");
+    } else {
+        syscall_ret = syscall_hook_init();
+    }
     if (syscall_ret < 0)
         pr_warn("syscall install hook unavailable: %d\n", syscall_ret);
 
